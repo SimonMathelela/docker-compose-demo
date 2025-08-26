@@ -38,28 +38,28 @@ jobs:
       #     name: go-test-results
       #     path: src
 
-      - name: Set up Docker Buildx
-        run: |
-          docker buildx create --use --name mybuilder || docker buildx use mybuilder
-
       - name: Log in to Docker Hub
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-      - name: Build and push Docker image
+      - name: Build images with Docker Compose
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            --push \
-            -t ${{ env.DOCKER_IMAGE_NAME }}:latest \
-            -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
-            .
+          docker compose build --build-arg IMAGE_NAME=${{ env.DOCKER_IMAGE_NAME }} --build-arg IMAGE_TAG=${{ env.DOCKER_IMAGE_TAG }}
 
       - name: Scan Docker image for vulnerabilities
         id: trivy_scan
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 --format table ${{ secrets.ACR_LOGIN_SERVER }}/${{ steps.extract_properties.outputs.artifact_id }}:${{ steps.retrieve_version.outputs.version }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 --format table ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
 
       - name: Check for vulnerabilities
         if: failure()
         run: |
           echo "High or critical severity vulnerabilities found. Failing the pipeline."
           exit 1
+
+      - name: Push images to Docker Hub
+        run: |
+          docker compose push
+
+      - name: Stop and remove Docker Compose services
+        if: always()
+        run: docker compose down
