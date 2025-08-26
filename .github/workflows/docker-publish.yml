@@ -46,20 +46,20 @@ jobs:
           docker compose build
 
       - name: List Docker images
-        run: docker images
+        run: docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}"
 
-      - name: Ensure image is correctly tagged
-        run: |
-          if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"; then
-            # Find the built image (assume service name is mukuru-http)
-            IMAGE_ID=$(docker images --format '{{.Repository}}:{{.ID}}' | grep 'mukuru-http' | head -n1 | awk -F: '{print $2}')
-            if [ -n "$IMAGE_ID" ]; then
-              docker tag $IMAGE_ID ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-            else
-              echo "Could not find built image to retag."
-              exit 1
-            fi
-          fi
+#      - name: Ensure image is correctly tagged
+#        run: |
+#          if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"; then
+#            # Find the built image (assume service name is mukuru-http)
+#            IMAGE_ID=$(docker images --format '{{.Repository}}:{{.ID}}' | grep 'mukuru-http' | head -n1 | awk -F: '{print $2}')
+#            if [ -n "$IMAGE_ID" ]; then
+#              docker tag $IMAGE_ID ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+#            else
+#              echo "Could not find built image to retag."
+#              exit 1
+#            fi
+#          fi
 
       - name: Install Trivy CLI
         run: |
@@ -71,7 +71,7 @@ jobs:
       - name: Scan Docker image for vulnerabilities
         id: trivy_scan
         run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 --format table ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          trivy image --severity HIGH,CRITICAL --exit-code 1 --format table ${{ env.DOCKER_IMAGE_NAME }}:latest
 
       - name: Check for vulnerabilities
         if: failure()
