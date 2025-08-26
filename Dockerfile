@@ -1,4 +1,4 @@
-FROM golang:1.24.6-alpine AS builder
+FROM golang:latest AS builder
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ COPY src/ ./
 
 RUN go build -o mukuru-http mukuru-http.go
 
-FROM alpine:3.20.1
+FROM alpine:latest
 
 WORKDIR /app
 
@@ -17,3 +17,4 @@ EXPOSE 3000
 ENV VERSION=local
 
 CMD ["./mukuru-http"]
+
