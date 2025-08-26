@@ -43,7 +43,10 @@ jobs:
 
       - name: Build images with Docker Compose
         run: |
-          docker compose build --build-arg IMAGE_NAME=${{ env.DOCKER_IMAGE_NAME }} --build-arg IMAGE_TAG=${{ env.DOCKER_IMAGE_TAG }}
+          docker compose build
+
+      - name: List Docker images
+        run: docker images
 
       - name: Install Trivy CLI
         run: |
