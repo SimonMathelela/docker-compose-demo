@@ -54,8 +54,12 @@ jobs:
             .
 
       - name: Scan Docker image for vulnerabilities
+        id: trivy_scan
         run: |
-          sudo apt-get update && sudo apt-get install -y wget
-          wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.2_Linux-64bit.tar.gz | tar zxvf - -C /tmp
-          sudo mv /tmp/trivy /usr/local/bin/
-          trivy image --exit-code 1 --severity HIGH --no-progress ${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 --format table ${{ secrets.ACR_LOGIN_SERVER }}/${{ steps.extract_properties.outputs.artifact_id }}:${{ steps.retrieve_version.outputs.version }}
+
+      - name: Check for vulnerabilities
+        if: failure()
+        run: |
+          echo "High or critical severity vulnerabilities found. Failing the pipeline."
+          exit 1
